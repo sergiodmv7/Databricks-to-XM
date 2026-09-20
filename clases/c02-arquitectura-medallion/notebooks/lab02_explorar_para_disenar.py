@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # Lab 2 — Explorar para diseñar
 # MAGIC
@@ -9,7 +13,12 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("usuario", "")
+dbutils.widgets.remove("usuario")
+
+# COMMAND ----------
+
+
+dbutils.widgets.text("usuario", "smarquez")
 usuario = dbutils.widgets.get("usuario").strip().lower()
 assert usuario, "Escribe tu usuario en el widget (o 'docente' para usar la tabla compartida)."
 
@@ -43,7 +52,7 @@ filas_por_serie_dia.display()
 # MAGIC **Pregunta de diseño 1.** Plata será una fila por serie-día con `demanda_real_kwh` y `perdidas_kwh`.
 # MAGIC ¿Qué debe pasar si un día llega solo una de las dos filas? (nulo, rechazar, cuarentena)
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Normalmente dejaria el otro dato como Nulo y guardaria el otro para no perder informacion valida, sin embargo, en este caso, siempre que existe una demanda deberian existir perdidas, por lo cual tal vez en este caso sea mejor rechazar
 
 # COMMAND ----------
 
@@ -73,7 +82,7 @@ GROUP BY FechaPublicacion ORDER BY FechaPublicacion
 # MAGIC **Pregunta de diseño 2.** Hoy cada `Fecha` tiene una sola `FechaPublicacion`, pero el 25 de julio se publicaron 200 días de golpe.
 # MAGIC Cuando el próximo archivo traiga días que ya existen, ¿bronce sobrescribe o acumula? ¿Quién decide cuál versión es la vigente?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ En bronce segun lo hablado la idea es representar lo mas fiel posible al dato como llego desde el origen, por lo cual se deberia acumular el dato y con los metadatos que se le incluyen de fecha de carga y demas se puede luego hacer trazabilidad. Ya luego en silver podria seleeccionarse
 
 # COMMAND ----------
 
@@ -103,7 +112,7 @@ print("Series incompletas:", n_incompletas)
 # MAGIC **Pregunta de diseño 3.** ¿Qué hace plata con una serie que aparece o desaparece a mitad de periodo?
 # MAGIC (rellenar con cero, marcar `activa = false`, excluir del modelo)
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ SI la serie aparece a mitad de periodo marcar como activa y no rellenar ni inventar datos hacia atras, y si desaparecer marca como inactiva y conservar historico
 
 # COMMAND ----------
 
@@ -130,7 +139,7 @@ por_tipo.display()
 # MAGIC **Pregunta de diseño 4.** 29 series regulan el 69 % de la energía; 326 series no reguladas son pequeñas y ruidosas.
 # MAGIC ¿Un modelo global para todo, uno por tipo de mercado, o uno por serie? ¿Qué métrica de error es justa entre escalas tan distintas?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ En este caso seria mejor un modelo por cada tipo de mercado, ya que tienen comportamientos muy diferentes y el modelo podria ignorar patrones pequeños. Como metrica tal vez mape o wape por las diferencias en tamaño entre las series
 
 # COMMAND ----------
 
@@ -154,7 +163,7 @@ print("Serie-días con demanda 0:", n_ceros)
 # MAGIC %md
 # MAGIC **Pregunta de diseño 5.** ¿Un cero es consumo real, ausencia de medida o error? ¿Qué regla de calidad va en plata y qué se hace con la fila (warn, cuarentena, drop)?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Plata no debería asumir que un valor 0 representa necesariamente ausencia de información. Primero debe definirse con negocio si el cero es un consumo válido, una convención para datos faltantes o una señal de error. Como regla general, los ceros válidos deben conservarse; los ceros estadísticamente anómalos deberían marcarse con una advertencia (warn); y únicamente los casos identificados como errores de captura o calidad deberían enviarse a cuarentena
 
 # COMMAND ----------
 
@@ -183,7 +192,7 @@ perdidas.display()
 # MAGIC %md
 # MAGIC **Pregunta de diseño 6.** Pérdidas ≈ 1,5 % de la demanda y nunca mayores. ¿Va como regla de calidad (`perdidas <= demanda`)? ¿Se pronostican las pérdidas o solo la demanda?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Si, las perdidas normalmente son un porcentaje muy pequeño de la demanda alrededor del 1.5%, seria a la final un poco innecesario pronosticar perdidas, y deberia enfocar recursos en pronosticar demanda y ya luego se le aplica el porcentaje de perdidas al resultado
 
 # COMMAND ----------
 

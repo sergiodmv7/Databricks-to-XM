@@ -10,11 +10,11 @@ Llena una fila por tabla. Reemplaza cada `<…>`. El dueño es un rol de XM, no 
 
 | Capa | Tabla | Grano (qué es una fila) | Dueño | Frescura | Garantías |
 |---|---|---|---|---|---|
-| Bronce | `bronze_energia.demanda_raw` | <un registro publicado, tal como llegó> | <rol> | <cuándo se actualiza> | <qué promete> |
-| Plata | `silver_energia.demanda_diaria` | <…> | <rol> | <…> | <…> |
-| Plata | `silver_energia.dim_ciiu` | <…> | <rol> | <…> | <…> |
-| Oro | `gold_energia.features_demanda_diaria` | <…> | <rol> | <…> | <…> |
-| Oro | `gold_energia.pronostico_demanda` | <…> | <rol> | <…> | <…> |
+| Bronce | `bronze_energia.demanda_raw` | <un registro publicado, tal como llegó> | <Ingeniería de Datos> | <Cada que llega un nuevo archivo a la ruta o cuando cambie el catálogo> | <Conserva el dato original, historial de cargas y republicaciones sin transformaciones de negocio> |
+| Plata | `silver_energia.demanda_diaria` | <Una fila por fecha y serie (codigo_sic_agente, mercado_comercializacion, tipo_mercado, clasificacion_industrial)> | <Ingeniería de Datos> | <Diario, posterior a la carga de Bronce> | <Datos normalizados, reglas de calidad aplicadas, versión vigente identificada y estructura consistente> |
+| Plata | `silver_energia.dim_ciiu` | <Una fila por clasificación CIIU> | <Ingeniería de Datos> | <Bajo demanda cuando cambie el catálogo> | <Catálogo único, códigos válidos y atributos estandarizados> |
+| Oro | `gold_energia.features_demanda_diaria` | <Una fila por fecha y serie (tipo_mercado, Variable)> | <Analítica Avanzada> | <Diario posterior a la actualización de Plata> | <Variables listas para entrenamiento e inferencia, definiciones consistentes y reproducibles> |
+| Oro | `gold_energia.pronostico_demanda` | <Una fila por fecha de ejecución, serie y día pronosticado del horizonte de 7 días> | <Analítica Avanzada> | <Diario posterior a la actualización de Plata> | <Pronóstico oficial generado por el modelo vigente, con trazabilidad de ejecución y versión del modelo> |
 
 ## Llave de serie
 
@@ -24,12 +24,12 @@ Llena una fila por tabla. Reemplaza cada `<…>`. El dueño es un rol de XM, no 
 
 | Hecho | Decisión | Dónde se implementa |
 |---|---|---|
-| Formato largo (2 filas por serie-día) | <…> | Plata (clase 6) |
-| Publicación con retraso variable y republicaciones | <…> | Bronce (clase 4) / Plata (clase 6) |
-| Series incompletas (4 de 355) | <…> | Plata / features (clase 7) |
-| Regulado vs. no regulado | <…> | Modelo (clase 9) — ver ADR-001 |
-| Ceros (299 serie-días) | <…> | Reglas de calidad (clase 5) |
-| Pérdidas ≤ demanda | <…> | Reglas de calidad (clase 5) |
+| Formato largo (2 filas por serie-día) | <Consolidar demanda y pérdidas en una única fila por serie y fecha, usando columnas separadas para cada métrica> | Plata (clase 6) |
+| Publicación con retraso variable y republicaciones | <Conservar todas las publicaciones en Bronce y determinar en Plata la versión vigente mediante la fecha de publicación más reciente> | Bronce (clase 4) / Plata (clase 6) |
+| Series incompletas (4 de 355) | <Mantener los registros incompletos, marcar faltantes y generar indicadores de completitud para el modelado> | Plata / features (clase 7) |
+| Regulado vs. no regulado | <Implementar dos modelos por tipo de mercado para evitar problemas por la diferencia de patron de comportamiento de ambos mercados catálogo> | Modelo (clase 9) — ver ADR-001 |
+| Ceros (299 serie-días) | <Conservar los ceros válidos y marcar como advertencia aquellos que resulten anómalos según reglas de calidad> | Reglas de calidad (clase 5) |
+| Pérdidas ≤ demanda | <Validar que las pérdidas no superen la demanda; las violaciones se marcan para revisión de calidad> | Reglas de calidad (clase 5) |
 
 ## Diagrama
 
